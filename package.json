@@ -1,0 +1,17 @@
+{
+  "name": "contentful-vanilla",
+  "version": "1.0.0",
+  "description": "A javascript library allowing simple integration with ContentFul for a vanilla website",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomdaniel-it/contentful-vanilla.git"
+  },
+  "author": "Tom Daniel",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tomdaniel-it/contentful-vanilla/issues"
+  },
+  "homepage": "https://github.com/tomdaniel-it/contentful-vanilla#readme"
+}

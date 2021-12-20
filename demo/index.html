@@ -1,0 +1,41 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>ContentFul Vanilla - Demo</title>
+  <meta name="description" content="Demo site for ContentFul Vanilla library">
+  <meta name="author" content="Tom Daniel">
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <h1>ContentFul Vanilla - Demo</h1>
+    <h5>Make sure to fill in your ContentFul spaceId & CDA token in js/contentful.js</h5>
+    <h2>Blog posts:</h2>
+    <div data-contentful-list="blogPost">
+        <div class="blogPost">
+            <h4 data-contentful-property="title" data-contentful-type="text"></h4>
+            <p data-contentful-property="description" data-contentful-type="text-multiline"></p>
+            <p data-contentful-property="publishedAt" data-contentful-type="date" data-contentful-format="dddd, MMMM D YYYY"></p>
+            <img data-contentful-property="banner" data-contentful-type="image">
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.10.7/dayjs.min.js"></script>
+    <script>
+        const contentfulSpaceId = '6w4y89i831mk';
+        const contentfulCdaToken = 'W8Q4scDJfgN1Ur_bjBn3k-asRH1_gOvx438_ixi4Exs';
+    </script>
+    <script src="js/contentful.js"></script>
+    <script>
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.classList.contains('blogPost')) {
+                window.location.href = `./post.html?id=${e.target.dataset.contentfulId}`;
+            }
+        });
+    </script>
+</body>
+</html>

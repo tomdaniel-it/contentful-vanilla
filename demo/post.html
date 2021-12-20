@@ -1,0 +1,64 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>A Basic HTML5 Template</title>
+  <meta name="description" content="A simple HTML5 Template for new projects.">
+  <meta name="author" content="SitePoint">
+
+  <meta property="og:title" content="A Basic HTML5 Template">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.sitepoint.com/a-basic-html5-template/">
+  <meta property="og:description" content="A simple HTML5 Template for new projects.">
+  <meta property="og:image" content="image.png">
+
+  <link rel="icon" href="/favicon.ico">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <link rel="stylesheet" href="css/styles.css">
+
+</head>
+
+<body>
+    <div id="post" data-contentful-content="blogPost" data-contentful-id="">
+        <h1 data-contentful-property="title" data-contentful-type="text"></h1>
+        <div data-contentful-property="content" data-contentful-type="rich-text">
+            <h1 data-contentful-rich-link="heading-1"><span data-contentful-rich-value></span></h1>
+            <h2 data-contentful-rich-link="heading-2"></h2>
+            <h3 data-contentful-rich-link="heading-3"></h3>
+            <h4 data-contentful-rich-link="heading-4"></h4>
+            <h5 data-contentful-rich-link="heading-5"></h5>
+            <h6 data-contentful-rich-link="heading-6"></h6>
+            <span data-contentful-rich-link="list-item-paragraph"></span>
+            <p data-contentful-rich-link="paragraph"></p>
+            <ul data-contentful-rich-link="unordered-list">
+                <li data-contentful-rich-link="child-item"></li>
+            </ul>
+            <ol data-contentful-rich-link="ordered-list">
+                <li data-contentful-rich-link="child-item"><span data-contentful-rich-value></span></li>
+            </ol>
+            <blockquote data-contentful-rich-link="blockquote"></blockquote>
+            <hr data-contentful-rich-link="hr">
+            <div data-contentful-rich-link="embedded-asset-block"><img data-contentful-rich-value></div>
+            <a data-contentful-rich-link="hyperlink"></a>
+            <a data-contentful-rich-link="asset-hyperlink"></a>
+            <a data-contentful-rich-link="entry-hyperlink" data-contentful-rich-embed-hyperlink-url="./post.html?id={{ID}}"></a>
+        </div>
+    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('id');
+        document.getElementById('post').dataset.contentfulId = postId;
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.10.7/dayjs.min.js"></script>
+    <script>
+        const contentfulSpaceId = '6w4y89i831mk';
+        const contentfulCdaToken = 'W8Q4scDJfgN1Ur_bjBn3k-asRH1_gOvx438_ixi4Exs';
+    </script>
+    <script src="js/contentful.js"></script>
+</body>
+</html>
