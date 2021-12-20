@@ -7,6 +7,10 @@ Add following script and include the contentful.js script before the closing `</
 <script>
     const contentfulSpaceId = 'YOUR-SPACE-ID';
     const contentfulCdaToken = 'YOUR-CDA-TOKEN';
+
+    document.addEventListener('contentfulLoaded', () => {
+        // Action when all contentful content has loaded
+    });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.10.7/dayjs.min.js"></script>
 <script src="js/contentful.js"></script>

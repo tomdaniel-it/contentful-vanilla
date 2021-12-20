@@ -26,16 +26,17 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.10.7/dayjs.min.js"></script>
     <script>
-        const contentfulSpaceId = '6w4y89i831mk';
-        const contentfulCdaToken = 'W8Q4scDJfgN1Ur_bjBn3k-asRH1_gOvx438_ixi4Exs';
-    </script>
-    <script src="js/contentful.js"></script>
-    <script>
-        document.addEventListener('click', (e) => {
-            if (e.target && e.target.classList.contains('blogPost')) {
-                window.location.href = `./post.html?id=${e.target.dataset.contentfulId}`;
-            }
+        const contentfulSpaceId = 'YOUR-SPACE-ID';
+        const contentfulCdaToken = 'YOUR-CDA-TOKEN';
+
+        document.addEventListener('contentfulLoaded', () => {
+            // Action when all contentful content has loaded
+            [...document.getElementsByClassName('blogPost')].forEach(post => {
+                post.addEventListener('click', () =>
+                    window.location.href = `./post.html?id=${post.dataset.contentfulId}`);
+            });
         });
     </script>
+    <script src="js/contentful.js"></script>
 </body>
 </html>
