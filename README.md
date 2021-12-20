@@ -8,7 +8,7 @@ Add following script and include the contentful.js script before the closing `</
     const contentfulSpaceId = 'YOUR-SPACE-ID';
     const contentfulCdaToken = 'YOUR-CDA-TOKEN';
 </script>
-<script src="js/contentful.js" />
+<script src="js/contentful.js"></script>
 ```
 
 ## Usage
