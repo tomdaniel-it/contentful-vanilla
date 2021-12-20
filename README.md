@@ -8,6 +8,7 @@ Add following script and include the contentful.js script before the closing `</
     const contentfulSpaceId = 'YOUR-SPACE-ID';
     const contentfulCdaToken = 'YOUR-CDA-TOKEN';
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.10.7/dayjs.min.js"></script>
 <script src="js/contentful.js"></script>
 ```
 
