@@ -1,7 +1,7 @@
 {
   "name": "contentful-vanilla",
   "version": "1.0.0",
-  "description": "A javascript library allowing simple integration with ContentFul for a vanilla website",
+  "description": "A javascript library allowing simple integration with Contentful for a vanilla website",
   "main": "index.js",
   "scripts": {},
   "repository": {

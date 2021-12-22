@@ -11,6 +11,7 @@
     const CONTENTFUL_TYPE_RICH_TEXT = 'rich-text';
 
     let generatedIdCounter = 0;
+    let generatePropertyIdCounter = 0;
 
     const createContentfulProperties = (htmlElement) => {
         const propertyElements = [...htmlElement.querySelectorAll('[data-contentful-property]')];
@@ -35,12 +36,16 @@
                     break;
                 case CONTENTFUL_TYPE_RICH_TEXT:
                     property = new ContentfulRichTextProperty();
+                    property.templateElements = [...el.querySelectorAll('[data-contentful-rich-link]')].filter(templateEl => templateEl.parentElement === el);
                     break;
                 default:
                     throw new Error('Unknown data-contentful-type value for data-contentful-property element: ' + propertyType);
             }
 
             if (el.dataset.contentfulProperty == null) throw new Error('data-contentful-property attribute requires a value.');
+            property.element = el;
+            property.id = generatePropertyIdCounter++;
+            property.element.dataset.contentfulPropertyId = property.id;
             property.name = el.dataset.contentfulProperty;
 
             return property;
@@ -58,8 +63,6 @@
         list.element = htmlElement;
         list.templateElement = htmlElement.children[0];
         list.properties = createContentfulProperties(list.templateElement);
-
-        list.templateElement.remove();
 
         return list;
     };
@@ -161,14 +164,13 @@
         'list-item-paragraph', 'hyperlink', 'asset-hyperlink', 'entry-hyperlink', 'blockquote', 'hr', 'embedded-asset-block'];
     const richTextTemplateNodesWithChildTemplates = ['ordered-list', 'unordered-list'];
 
-    const generateRichHtmlNodes = (property, propertyEl) => {
+    const generateRichHtmlNodes = (property) => {
         if (!(property instanceof ContentfulRichTextProperty)) {
             throw new Error('Can not generate rich HTML for non rich-text property.');
         }
 
         const templates = {};
-        [...propertyEl.querySelectorAll(`[data-contentful-rich-link]`)]
-            .filter(el => el.parentElement === propertyEl)
+        property.templateElements
             .forEach(templateEl => {
                 const nodeType = templateEl.dataset.contentfulRichLink;
                 if (templates[nodeType] != null) {
@@ -264,7 +266,6 @@
                                 case 'paragraph':
                                     return createContentItemNode(subContentItem).outerHTML;
                                 default:
-                                    console.log(contentItem)
                                     console.warn(`Unknown sub-node type: ${subContentItem.nodeType}. Ignoring this content.`);
                                     return '';
                             }
@@ -308,34 +309,37 @@
         if (!(content instanceof ContentfulContent)) {
             throw new Error('Content to update DOM to was not of type ContentfulContent, but class: ' + content.constructor.name);
         }
-
         content.properties.forEach(property => {
-            const elements = [...content.element.querySelectorAll(`[data-contentful-property="${property.name}"]`)];
+            const attributeFillIfPresent = (value) => {
+                const fillAttribute = property.element.dataset.contentfulAttributeFill;
+                if (fillAttribute == null) return false;
+                property.element.attributes[fillAttribute].value = property.element.attributes[fillAttribute].value.replace(/{{CONTENTFUL-VALUE}}/g, value);
+                return true;
+            };
 
-            let updateElement;
             if (property instanceof ContentfulTextProperty) {
-                updateElement = (el => el.innerHTML = sanitizeHTML(property.text.replace(/\n/g, '')));
+                const value = sanitizeHTML(property.text.replace(/\n/g, ''));
+                if (attributeFillIfPresent(value)) return;
+                property.element.innerHTML = value;
             } else if (property instanceof ContentfulMultilineTextProperty) {
-                updateElement = (el => el.innerHTML = property.text.split('\n').map(str => sanitizeHTML(str)).join('<br>'))
+                if (attributeFillIfPresent(sanitizeHTML(property.text))) return;
+                property.element.innerHTML = property.text.split('\n').map(str => sanitizeHTML(str)).join('<br>');
             } else if (property instanceof ContentfulDateProperty) {
-                updateElement = (el => el.innerHTML = dayjs(property.date).format(property.format));
+                const value = dayjs(property.date).format(property.format || 'HH:mm, D MMMM, YYYY');
+                if (attributeFillIfPresent(value)) return;
+                property.element.innerHTML = value;
             } else if (property instanceof ContentfulRichTextProperty) {
-                updateElement = (el => {
-                    el.childNodes.forEach(node => node.remove());
-                    const nodes = generateRichHtmlNodes(property, el);
-                    [...el.childNodes].forEach(node => node.remove());
-                    nodes.forEach(node => el.appendChild(node));
-                });
+                property.element.childNodes.forEach(node => node.remove());
+                const nodes = generateRichHtmlNodes(property);
+                [...property.element.childNodes].forEach(node => node.remove());
+                nodes.forEach(node => property.element.appendChild(node));
             } else if (property instanceof ContentfulImageProperty) {
-                updateElement = (el => {
-                    el.src = property.url;
-                    el.alt = property.title;
-                });
+                if (attributeFillIfPresent(property.url)) return;
+                property.element.src = property.url;
+                property.element.alt = property.title;
             } else {
                 throw new Error('Unknown property type: ' + property.constructor.name);
             }
-
-            elements.forEach(updateElement);
         });
     };
 
@@ -345,7 +349,9 @@
                 value.element = contentfulElement.templateElement.cloneNode(true);
                 value.element.dataset.contentfulContent = contentfulElement.name;
                 value.element.dataset.contentfulId = value.id;
-
+                value.properties.forEach(property => {
+                    property.element = value.element.querySelector(`[data-contentful-property-id="${property.id}"]`);
+                });
                 contentfulElement.element.append(value.element);
                 updateDOMForContentfulContent(value);
             });
@@ -362,6 +368,13 @@
 
         const lists = listElements.map(createContentfulList);
         const contents = contentElements.map(createContentfulContent);
+
+        lists.forEach(list => [...list.element.childNodes].forEach(el => el.remove()));
+        contents.forEach(content => content.properties.forEach(property => {
+            if (property instanceof ContentfulRichTextProperty) {
+                [...property.element.childNodes].forEach(node => node.remove());
+            }
+        }));
 
         const elements = await fetchContentfulPropertyValues([...lists, ...contents]);
 
@@ -394,7 +407,9 @@
     }
 
     class ContentfulProperty {
+        id;
         name;
+        element;
 
         clone() {
             throw new Error('Inheriting class of ContentfulProperty does not implement clone() function.');
@@ -410,7 +425,9 @@
 
         clone() {
             const newProperty = new ContentfulTextProperty();
+            newProperty.id = this.id;
             newProperty.name = this.name;
+            newProperty.element = this.element;
             newProperty.text = this.text;
             return newProperty;
         }
@@ -425,7 +442,9 @@
 
         clone() {
             const newProperty = new ContentfulMultilineTextProperty();
+            newProperty.id = this.id;
             newProperty.name = this.name;
+            newProperty.element = this.element;
             newProperty.text = this.text;
             return newProperty;
         }
@@ -441,7 +460,9 @@
 
         clone() {
             const newProperty = new ContentfulDateProperty();
+            newProperty.id = this.id;
             newProperty.name = this.name;
+            newProperty.element = this.element;
             newProperty.date = this.date;
             newProperty.format = this.format;
             return newProperty;
@@ -450,6 +471,7 @@
 
     class ContentfulRichTextProperty extends ContentfulProperty {
         content;
+        templateElements;
         hyperlinkAssets;
         blockAssets;
 
@@ -459,8 +481,11 @@
 
         clone() {
             const newProperty = new ContentfulRichTextProperty();
+            newProperty.id = this.id;
             newProperty.name = this.name;
+            newProperty.element = this.element;
             newProperty.content = this.content;
+            newProperty.templateElements = this.templateElements;
             newProperty.hyperlinkAssets = this.hyperlinkAssets;
             newProperty.blockAssets = this.blockAssets;
             return newProperty;
@@ -477,7 +502,9 @@
 
         clone() {
             const newProperty = new ContentfulImageProperty();
+            newProperty.id = this.id;
             newProperty.name = this.name;
+            newProperty.element = this.element;
             newProperty.title = this.title;
             newProperty.url = this.url;
             return newProperty;
