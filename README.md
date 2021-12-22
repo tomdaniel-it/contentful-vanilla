@@ -99,6 +99,14 @@ Example:
 </div>
 ```
 
+If you have an order property on your Contentful content type, you can add the `data-contentful-order="xxx"` attribute with the name of your order property. The items in the list will be ordered by this property.
+Example:
+```html
+<div data-contentful-list="blogPost" data-contentful-order="order">
+  ...
+</div>
+```
+
 ### Rich text
 Rich texts in Contentful can contain all kinds of text styles, links and images. For each type of text/image/link, a template needs to be defined so that the library knows which html to inject for which rich text type.
 Inside your rich text container, which contains the `data-contentful-type="rich-text"` attribute, you need to add an element with the attribute `data-contentful-rich-link="xxx"` for each rich text type.

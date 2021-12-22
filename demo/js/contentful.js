@@ -61,6 +61,7 @@
         if (htmlElement.dataset.contentfulList == null) throw new Error('data-contentful-list attribute must have a value containing the name of the element.');
         list.name = htmlElement.dataset.contentfulList;
         list.element = htmlElement;
+        list.orderProperty = htmlElement.dataset.contentfulOrder || null;
         list.templateElement = htmlElement.children[0];
         list.properties = createContentfulProperties(list.templateElement);
 
@@ -82,7 +83,8 @@
     const fetchContentfulPropertyValues = async (elements) => {
         const queryParts = elements.map(element => {
             if (element instanceof ContentfulList) {
-                return `${element.name}Collection{items{sys{id},${element.properties.map(prop => prop.toGraphQLQuery()).join(',')}}}`;
+                const orderQueryPart = element.orderProperty || '';
+                return `${element.name}Collection{items{sys{id},${[...element.properties.map(prop => prop.toGraphQLQuery()), orderQueryPart].join(',').replace(/,$/,'')}}}`;
             } else if (element instanceof ContentfulContent) {
                 return `${element.generatedId}:${element.name}(id:"${element.id}"){${element.properties.map(prop => prop.toGraphQLQuery()).join(',')}}`;
             } else {
@@ -142,10 +144,19 @@
                     const content = new ContentfulContent();
                     content.id = item.sys.id;
                     content.name = element.name;
+                    content.order = element.orderProperty != null ? item[element.orderProperty] : null;
                     content.properties = element.properties.map(property => createPropertyWithContentfulData(property, item));
 
                     return content;
                 });
+
+                if (element.orderProperty != null) {
+                    element.values = element.values.sort((a, b) => {
+                        if (a.order == null && (isNaN(a.order) || a.order !== 0)) return 1;
+                        if (b.order == null && (isNaN(b.order) ||  b.order !== 0)) return -1;
+                        return Number(a.order) - Number(b.order);
+                    });
+                }
 
                 return element;
             } else if (element instanceof ContentfulContent) {
@@ -394,11 +405,13 @@
     class ContentfulList extends ContentfulElement {
         templateElement;
         values;
+        orderProperty;
     }
 
     class ContentfulContent extends ContentfulElement {
         id;
         generatedId;
+        order;
 
         constructor() {
             super();
