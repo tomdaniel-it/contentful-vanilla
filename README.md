@@ -51,12 +51,12 @@ This Contentful Vanilla library maps these properties to html elements with cust
 
 ### Fill data for specific content object
 If you want to inject the data for a specific content object, then you can use the following attributes on your container HTML element:
-- `data-contentful-content="blogPost"`: for retrieving single content object
-- `data-contentful-id="xxx"`: defines the id of the object to retrieve data from
+- `data-contentful-content`: For retrieving a single content object
+- `data-contentful-id`: Defines the id of the object to retrieve data from
 
 Inside your object container HTML element, you can now add following attributes on elements to inject data of your content object:
-- `data-contentful-property="xxx"`: defines what property value will be injected
-- `data-contentful-type="xxx"`: defines the Contentful data type to be injected
+- `data-contentful-property`: Defines what property value will be injected
+- `data-contentful-type`: Defines the Contentful data type to be injected
 
 Example:
 ```html
@@ -69,23 +69,23 @@ Example:
 ```
 
 #### Content types
-The supported types for the attribute `data-contentful-type="xxx"` are:
+The supported types for the attribute `data-contentful-type` are:
 - `text`
 - `text-multiline`
 - `date`
-  - For dates, the attribute `data-contentful-format="xxx"` can be added to display the date in a specific format (formatting done by dayjs). Default format: `HH:mm, D MMMM, YYYY`
+  - For dates, the attribute `data-contentful-format` can be added to display the date in a specific format (formatting done by dayjs). Default format: `HH:mm, D MMMM, YYYY`
 - `image`
   - Expected to use with an `<img/>` element, the `src` and `alt` attributes will be injected with the title and url data provided by Contentful
 - `rich-text`
   - See how to use rich texts below
 
 #### Other attributes
-- `data-contentful-attribute-fill="xxx"`: Add this attribute if you want the content to be injected into an attribute value, with xxx being the attribute name. The `{{CONTENTFUL-VALUE}}` part of the attribute will be replaced by the content value.
+- `data-contentful-attribute-fill`: Add this attribute if you want the content to be injected into an attribute value, with the value being the attribute name. The `{{CONTENTFUL-VALUE}}` part of the attribute will be replaced by the content value.
   - Example: `<span data-contentful-property="banner" data-contentful-type="image" data-contentful-attribute-fill="style" style="background-image: url('{{CONTENTFUL-VALUE}}');"></span>`
 
 ### Generate HTML from template for each content item in content collection
 If you want to generate a html element for each content item in a collection, then you can use the following attribute on your container HTML element:
-- `data-contentful-list="xxx"`: all content elements for the collection xxx will be injected into this container. NOTE: The value of this attribute should not contain the `Collection` suffix.
+- `data-contentful-list`: All content elements for this collection will be injected into this container. NOTE: The value of this attribute should not contain the `Collection` suffix.
 
 Inside your container HTML element, you need to place one HTML element. This will be viewed as your template, and for each content item in your collection, this template will be generated.
 Inside the template, you can use the basic attributes mentioned above to inject content data.
@@ -99,17 +99,29 @@ Example:
 </div>
 ```
 
-If you have an order property on your Contentful content type, you can add the `data-contentful-order="xxx"` attribute with the name of your order property. The items in the list will be ordered by this property.
+If you have an **order property** on your Contentful content type, you can add the `data-contentful-order` attribute with the name of your order property. The items in the list will be ordered by this property.
+By default, the order property is interpreted as a number and orders ascending. To change this behaviour, the following attributes can be added:
+- `data-contentful-order-type`: Can contain the values `number`, `text` and `date`
+- `data-contentful-order-direction`: Can contain the values `ascending` and `descending`
+
 Example:
 ```html
-<div data-contentful-list="blogPost" data-contentful-order="order">
+<div data-contentful-list="blogPost" data-contentful-order="order" data-contentful-order-type="date" data-contentful-order-direction="descending">
+  ...
+</div>
+```
+
+To **limit** a list to a maximum amount of items, the `data-contentful-limit` attribute can be used.
+Example:
+```html
+<div data-contentful-list="blogPost" data-contentful-limit="3">
   ...
 </div>
 ```
 
 ### Rich text
 Rich texts in Contentful can contain all kinds of text styles, links and images. For each type of text/image/link, a template needs to be defined so that the library knows which html to inject for which rich text type.
-Inside your rich text container, which contains the `data-contentful-type="rich-text"` attribute, you need to add an element with the attribute `data-contentful-rich-link="xxx"` for each rich text type.
+Inside your rich text container, which contains the `data-contentful-type="rich-text"` attribute, you need to add an element with the attribute `data-contentful-rich-link` for each rich text type.
 
 The supported rich text types (= values for the `data-contentful-rich-link` attribute) are:
 - `heading-1`
