@@ -87,7 +87,7 @@
         const queryParts = elements.map(element => {
             if (element instanceof ContentfulList) {
                 const orderQueryPart = element.orderProperty || '';
-                return `${element.name}Collection{items{sys{id},${[...element.properties.map(prop => prop.toGraphQLQuery()), orderQueryPart].join(',').replace(/,$/,'')}}}`;
+                return `${element.name}Collection{items{sys{id},${[...element.properties.map(prop => prop.toGraphQLQuery()), orderQueryPart].join(',').replace(/,$/,'').replace(/,,/g, ',')}}}`;
             } else if (element instanceof ContentfulContent) {
                 return `${element.generatedId}:${element.name}(id:"${element.id}"){${element.properties.map(prop => prop.toGraphQLQuery()).join(',')}}`;
             } else {
@@ -111,7 +111,11 @@
         const createPropertyWithContentfulData = (property, contentfulData) => {
             const newProperty = property.clone();
             if (newProperty instanceof ContentfulTextProperty) {
-                newProperty.text = contentfulData[newProperty.name];
+                if (newProperty.name === 'sys.id') {
+                    newProperty.text = contentfulData.sys.id;
+                } else {
+                    newProperty.text = contentfulData[newProperty.name];
+                }
             } else if (newProperty instanceof ContentfulMultilineTextProperty) {
                 newProperty.text = contentfulData[newProperty.name];
             } else if (newProperty instanceof ContentfulDateProperty) {
@@ -455,7 +459,7 @@
         text;
 
         toGraphQLQuery() {
-            return this.name;
+            return this.name !== 'sys.id' ? this.name : '';
         }
 
         clone() {

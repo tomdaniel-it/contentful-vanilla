@@ -55,7 +55,7 @@ If you want to inject the data for a specific content object, then you can use t
 - `data-contentful-id`: Defines the id of the object to retrieve data from
 
 Inside your object container HTML element, you can now add following attributes on elements to inject data of your content object:
-- `data-contentful-property`: Defines what property value will be injected
+- `data-contentful-property`: Defines what property value will be injected. If you want the Contentful ID of the content item, you can use the value `sys.id`
 - `data-contentful-type`: Defines the Contentful data type to be injected
 
 Example:
