@@ -53,10 +53,6 @@
     };
 
     const createContentfulList = (htmlElement) => {
-        if (htmlElement.children.length !== 1) {
-            throw new Error('data-contentful-list element must have exactly one child element which defines template element.');
-        }
-
         const list = new ContentfulList();
         if (htmlElement.dataset.contentfulList == null) throw new Error('data-contentful-list attribute must have a value containing the name of the element.');
         list.name = htmlElement.dataset.contentfulList;
@@ -65,7 +61,13 @@
         list.orderType = htmlElement.dataset.contentfulOrderType || 'number';
         list.orderDirection = htmlElement.dataset.contentfulOrderDirection || 'ascending';
         list.limit = htmlElement.dataset.contentfulLimit;
-        list.templateElement = htmlElement.children[0];
+        list.chunkSize = Number(htmlElement.dataset.contentfulListChunk) || null;
+        list.chunkTargetElement = htmlElement.querySelector(`[data-contentful-list-chunk-target]`) || null;
+        if (list.chunkSize) list.chunkTemplateElement = htmlElement.children[0];
+        if (list.chunkSize && !list.chunkTargetElement) throw new Error('data-contentful-list-chunk is present without required attribute data-contentful-list-chunk-target.');
+        if (htmlElement.children.length !== 1) throw new Error('data-contentful-list element must have exactly one child element which defines template element.');
+        if (list.chunkSize && list.chunkTargetElement.children.length !== 1) throw new Error('data-contentful-list-chunk-target element must have exactly one child element which defines template element.');
+        list.templateElement = (list.chunkTargetElement || htmlElement).children[0];
         list.properties = createContentfulProperties(list.templateElement);
 
         return list;
@@ -82,6 +84,17 @@
 
         return content;
     };
+
+    const shuffle = (array) => {
+        let shuffledArray = [...array];
+        let currentIndex = shuffledArray.length;
+        while (currentIndex !== 0) {
+            let randomIndex = Math.floor(Math.random() * currentIndex--);
+            [shuffledArray[currentIndex], shuffledArray[randomIndex]] = [shuffledArray[randomIndex], shuffledArray[currentIndex]];
+        }
+
+        return shuffledArray;
+    }
 
     const fetchContentfulPropertyValues = async (elements) => {
         const queryParts = elements.map(element => {
@@ -157,7 +170,9 @@
                     return content;
                 });
 
-                if (element.orderProperty != null) {
+                if (element.orderDirection === 'random') {
+                    element.values = shuffle(element.values);
+                } else if (element.orderProperty != null) {
                     element.values = element.values.sort((a, b) => {
                         if (a.order === null || a.order === undefined || a.order.toString().trim() === '') return 1;
                         if (b.order === null || b.order === undefined || b.order.toString().trim() === '') return -1;
@@ -377,18 +392,80 @@
         });
     };
 
+    const fillComputedAttribute = ((attribute, listIndex, chunkIndex) => {
+        const codeRegexStr = `{{(.*?)}}`;
+        const globalCodeRegex = new RegExp(codeRegexStr, 'g');
+        const codeRegex = new RegExp(codeRegexStr);
+
+        const computedValues = [];
+        while (true) {
+            const regResult = globalCodeRegex.exec(attribute.value);
+            if (!regResult) break;
+            computedValues.push(eval(regResult[1]));
+        }
+        computedValues.forEach(value => attribute.value = attribute.value.replace(codeRegex, value));
+    });
+
     const updateDOMForContentfulElement = (contentfulElement) => {
         if (contentfulElement instanceof ContentfulList) {
-            contentfulElement.values.forEach(value => {
-                value.element = contentfulElement.templateElement.cloneNode(true);
+            const processValue = (value, templateElement, containerElement, listIndex) => {
+                value.element = templateElement.cloneNode(true);
                 value.element.dataset.contentfulContent = contentfulElement.name;
                 value.element.dataset.contentfulId = value.id;
+                value.element.dataset.contentfulListIndex = listIndex;
                 value.properties.forEach(property => {
                     property.element = value.element.querySelector(`[data-contentful-property-id="${property.id}"]`);
                 });
-                contentfulElement.element.append(value.element);
+
+                containerElement.append(value.element);
                 updateDOMForContentfulContent(value);
-            });
+            }
+
+            if (contentfulElement.chunkSize) {
+                for (let chunkIndex = 0;
+                    chunkIndex < Math.ceil(contentfulElement.values.length / contentfulElement.chunkSize);
+                    ++chunkIndex
+                ) {
+                    const chunkElement = contentfulElement.chunkTemplateElement.cloneNode(true);
+                    const chunkTargetElement = chunkElement.dataset.contentfulListChunkTarget != undefined
+                        ? chunkElement
+                        : chunkElement.querySelector('[data-contentful-list-chunk-target]');
+                    [...chunkTargetElement.childNodes].forEach(node => node.remove());
+                    for (
+                        let i = chunkIndex * contentfulElement.chunkSize;
+                        i < Math.min((chunkIndex + 1) * contentfulElement.chunkSize, contentfulElement.values.length);
+                        ++i
+                    ) {
+                        processValue(contentfulElement.values[i], contentfulElement.templateElement, chunkTargetElement, i);
+                        chunkTargetElement.dataset.contentfulChunkIndex = chunkIndex;
+                    }
+                    contentfulElement.element.append(chunkElement);
+                }
+
+                (() => {
+                    const computedElements = [...contentfulElement.element.querySelectorAll('[data-contentful-computed]')];
+                    if (contentfulElement.element.dataset.contentfulComputed != undefined)
+                        computedElements.push(contentfulElement.element);
+                    computedElements.forEach(el => {
+                        const listIndex = el.dataset.contentfulListIndex || null;
+                        const chunkIndex = el.dataset.contentfulChunkIndex || null;
+                        [...el.attributes].forEach(attr => fillComputedAttribute(attr, listIndex, chunkIndex));
+                    });
+                })();
+            } else {
+                contentfulElement.values.forEach((value, i) =>
+                    processValue(value, contentfulElement.templateElement, contentfulElement.element, i));
+
+                (() => {
+                    const computedElements = [...contentfulElement.element.querySelectorAll('[data-contentful-computed]')];
+                    if (contentfulElement.element.dataset.contentfulComputed != undefined)
+                        computedElements.push(contentfulElement.element);
+                    computedElements.forEach(el => {
+                        const listIndex = el.dataset.contentfulListIndex || null;
+                        el.attributes.forEach(attr => fillComputedAttribute(attr, listIndex));
+                    });
+                })();
+            }
         } else if (contentfulElement instanceof ContentfulContent) {
             updateDOMForContentfulContent(contentfulElement);
         } else {
@@ -432,6 +509,9 @@
         orderType;
         orderDirection;
         limit;
+        chunkSize;
+        chunkTemplateElement;
+        chunkTargetElement;
     }
 
     class ContentfulContent extends ContentfulElement {

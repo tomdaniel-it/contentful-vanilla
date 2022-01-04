@@ -102,7 +102,7 @@ Example:
 If you have an **order property** on your Contentful content type, you can add the `data-contentful-order` attribute with the name of your order property. The items in the list will be ordered by this property.
 By default, the order property is interpreted as a number and orders ascending. To change this behaviour, the following attributes can be added:
 - `data-contentful-order-type`: Can contain the values `number`, `text` and `date`
-- `data-contentful-order-direction`: Can contain the values `ascending` and `descending`
+- `data-contentful-order-direction`: Can contain the values `ascending`, `descending` and `random`
 
 Example:
 ```html
@@ -118,6 +118,35 @@ Example:
   ...
 </div>
 ```
+
+To split your list into chunks and make each chunk have a container HTML element, use the `data-contentful-list-chunk` attribute with the value being the chunk size. The template element for the content item must have the attribute `data-contentful-list-chunk-target` linking to the container containing the template element.
+Example:
+```html
+<div data-contentful-list="blogPost">
+  <div data-contentful-list-chunk="3">
+    <span>Chunk of 3 items: </span>
+    <div data-contentful-list-chunk-target>
+      <article>
+        ...
+      </article>
+    </div>
+  </div>
+</div>
+```
+
+### Variables
+Variables can be used to fill attribute values. You can simply add the `data-contentful-computed` attribute and all attributes on this element will be scanned for containing variables / code surrounded by double curly brackets.
+
+Example:
+```html
+<h1 data-contentful-computed style="color: {{Math.random() > 0.5 ? 'red' : 'green'}}"></h1>
+```
+
+The variables are:
+- `listIndex`: When in the template inside a list loop, this represents the index of the item in the list.
+- `chunkIndex`: When in the template inside a chunk of a list loop, this represents the index of the chunk in the list.
+
+(currently only supported in lists)
 
 ### Rich text
 Rich texts in Contentful can contain all kinds of text styles, links and images. For each type of text/image/link, a template needs to be defined so that the library knows which html to inject for which rich text type.
