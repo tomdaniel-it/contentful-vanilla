@@ -137,10 +137,20 @@
                 newProperty.content = contentfulData[newProperty.name].json.content;
                 let manipulateListItem;
                 manipulateListItem = (contentItem => {
+                    let replaceListItemParagraphNodeType;
+                    replaceListItemParagraphNodeType = (el) => {
+                        if (el.content instanceof Array) {
+                            el.content.forEach(subEl => {
+                                if (subEl.nodeType === 'paragraph') {
+                                    subEl.nodeType = 'list-item-paragraph';
+                                } else {
+                                    replaceListItemParagraphNodeType(subEl);
+                                }
+                            });
+                        }
+                    };
                     if (contentItem.nodeType === 'list-item') {
-                        contentItem.content.forEach(subContentItem => {
-                            if (subContentItem.nodeType === 'paragraph') subContentItem.nodeType = 'list-item-paragraph';
-                        })
+                        replaceListItemParagraphNodeType(contentItem);
                     } else if (contentItem.content instanceof Array) {
                         contentItem.content.forEach(manipulateListItem);
                     }
